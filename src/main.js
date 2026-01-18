@@ -1059,38 +1059,7 @@ function initMainApp() {
         profileModal.classList.add('hidden');
       });
 
-      saveProfileBtn.addEventListener('click', async () => {
-        const newName = profileNameInput.value.trim();
-        if (!newName) {
-          showNotification("Username cannot be empty", "error");
-          return;
-        }
 
-        saveProfileBtn.disabled = true;
-        saveProfileBtn.textContent = "Saving...";
-
-        try {
-          const { data, error } = await supabase.auth.updateUser({
-            data: { display_name: newName }
-          });
-
-          if (error) throw error;
-
-          showNotification("Profile updated successfully!", "success");
-          profileModal.classList.add('hidden');
-
-          // Updates UI locally without page reload
-          updateProfileUI(data.user);
-          chatManager.setCurrentUser(data.user);
-
-        } catch (e) {
-          console.error(e);
-          showNotification("Failed to update profile: " + e.message, "error");
-        } finally {
-          saveProfileBtn.disabled = false;
-          saveProfileBtn.textContent = "Save Changes";
-        }
-      });
 
     } else {
       profileContainer.innerHTML = `<button class="sign-in-link" id="header-sign-in">Sign In</button>`;
@@ -1277,6 +1246,46 @@ function initMainApp() {
     // Trigger Generation
     await generateResponse();
   });
+
+  // Profile Save Listener (Global)
+  const saveProfileBtn = document.getElementById('save-profile-btn');
+  if (saveProfileBtn) {
+    saveProfileBtn.addEventListener('click', async () => {
+      const profileNameInput = document.getElementById('profile-username-input');
+      const profileModal = document.getElementById('profile-modal');
+      const newName = profileNameInput.value.trim();
+
+      if (!newName) {
+        showNotification("Username cannot be empty", "error");
+        return;
+      }
+
+      saveProfileBtn.disabled = true;
+      saveProfileBtn.textContent = "Saving...";
+
+      try {
+        const { data, error } = await supabase.auth.updateUser({
+          data: { display_name: newName }
+        });
+
+        if (error) throw error;
+
+        showNotification("Profile updated successfully!", "success");
+        profileModal.classList.add('hidden');
+
+        // Updates UI locally without page reload
+        updateProfileUI(data.user);
+        chatManager.setCurrentUser(data.user);
+
+      } catch (e) {
+        console.error(e);
+        showNotification("Failed to update profile: " + e.message, "error");
+      } finally {
+        saveProfileBtn.disabled = false;
+        saveProfileBtn.textContent = "Save Changes";
+      }
+    });
+  }
 
   // New Chat Button
   document.getElementById('new-chat-btn').addEventListener('click', () => {
