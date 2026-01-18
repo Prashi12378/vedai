@@ -1,4 +1,4 @@
-# VedAI - Smart Conversational Assistant 🚀
+# VedAI - Smart Conversational Assistant 🚀 <!-- Vercel Build Trigger -->
 
 VedAI is a premium, AI-powered chatbot built with modern web technologies, featuring a sleek dark-mode enabled UI, persistent chat history via Supabase, and real-time streaming responses.
 
