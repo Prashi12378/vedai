@@ -118,7 +118,7 @@ Do NOT provide a made-up answer if you need to search. Just output the command.`
 
         console.log('🤖 Sending initial request to Groq...');
         let completion = await client.chat.completions.create({
-            model: userModel,
+            model: "llama-3.3-70b-versatile",
             messages: messages,
             stream: false,
         });
@@ -148,7 +148,7 @@ Do NOT provide a made-up answer if you need to search. Just output the command.`
                 });
 
                 completion = await client.chat.completions.create({
-                    model: userModel,
+                    model: "llama-3.3-70b-versatile",
                     messages: messages,
                     stream: false,
                 });
