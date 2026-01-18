@@ -143,8 +143,7 @@ Do NOT provide a made-up answer if you need to search. Just output the command.`
                 // We add the search command as a "assistant" message, and the results as "system" or "tool" context
                 messages.push({ role: "assistant", content: reply });
                 messages.push({
-                    role: "system",
-                    content: `SEARCH RESULTS FOR "${query}":\n${searchResults}\n\nINSTRUCTIONS: Use the above results to answer the user's original question which was: "${history[history.length - 1].content}". Cite the results if possible.`
+                    content: `SEARCH RESULTS FOR "${query}":\n${searchResults}\n\nINSTRUCTIONS: Use the above results to answer the user's original question which was: "${history[history.length - 1].content}". Cite the results if possible.\n\nCRITICAL: You MUST answer in the same language as the user's original message. If the user asked in Hindi, answer in Hindi. If Spanish, answer in Spanish.`
                 });
 
                 completion = await client.chat.completions.create({
