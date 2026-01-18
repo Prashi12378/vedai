@@ -1218,17 +1218,14 @@ function initMainApp() {
 
 
 
-      const currentSettings = SupabaseManager.getSettings();
-      const currentModel = currentSettings.model || 'llama-3.3-70b-versatile';
-
+      // Simplified: No model param
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          history: messagesToSend,
-          model: currentModel
+          history: messagesToSend
         }),
         signal: abortController.signal
       });
@@ -1610,76 +1607,6 @@ function initMainApp() {
 
 
 
-
-  // --- Custom Model Selector Logic ---
-  const modelBtn = document.getElementById('model-btn');
-  const modelDropdown = document.getElementById('model-dropdown');
-  const modelOptions = document.querySelectorAll('.model-option');
-
-  // Initialize from saved settings
-  if (modelBtn) {
-    const savedSettings = SupabaseManager.getSettings();
-    const savedModel = savedSettings.model || 'llama-3.3-70b-versatile';
-
-    // Find matching option or default
-    const matchingOption = Array.from(modelOptions).find(opt => opt.dataset.value === savedModel);
-    if (matchingOption) {
-      const name = matchingOption.querySelector('.model-name').textContent;
-      modelBtn.dataset.value = savedModel;
-      modelBtn.innerHTML = `
-            <span class="model-text">${name}</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 6px;">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          `;
-      modelOptions.forEach(opt => opt.classList.remove('selected'));
-      matchingOption.classList.add('selected');
-    }
-  }
-
-  if (modelBtn && modelDropdown) {
-    // Toggle Dropdown
-    modelBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      modelDropdown.classList.toggle('hidden');
-    });
-
-    // Select Option
-    modelOptions.forEach(option => {
-      option.addEventListener('click', () => {
-        const value = option.dataset.value;
-        const name = option.querySelector('.model-name').textContent;
-
-        // Update Button state
-        modelBtn.dataset.value = value;
-        modelBtn.innerHTML = `
-        <span class="model-text">${name}</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 6px;">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      `;
-
-        // Update Selection Styles
-        modelOptions.forEach(opt => opt.classList.remove('selected'));
-        option.classList.add('selected');
-
-        // Close Dropdown
-        modelDropdown.classList.add('hidden');
-
-        // Save to Settings
-        const currentSettings = SupabaseManager.getSettings();
-        currentSettings.model = value;
-        SupabaseManager.saveSettings(currentSettings);
-      });
-    });
-
-    // Close when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!modelBtn.contains(e.target) && !modelDropdown.contains(e.target)) {
-        modelDropdown.classList.add('hidden');
-      }
-    });
-  }
 
   // --- Voice Assistant Logic ---
   const micBtn = document.getElementById('mic-btn');
