@@ -2,6 +2,48 @@ import './style.css';
 import { marked } from 'marked';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github.css';
+import CryptoJS from 'crypto-js';
+
+// Encryption config
+const SECRET_KEY = import.meta.env.VITE_ENCRYPTION_KEY || 'vedai-fallback-secret-key';
+
+// Helper: Encrypt
+function encryptData(data) {
+  try {
+    const jsonStr = JSON.stringify(data);
+    return CryptoJS.AES.encrypt(jsonStr, SECRET_KEY).toString();
+  } catch (e) {
+    console.error("Encryption Failed:", e);
+    return JSON.stringify(data); // Fallback to plain text
+  }
+}
+
+// Helper: Decrypt
+function decryptData(ciphertext) {
+  try {
+    if (!ciphertext) return [];
+
+    // Try AES Decrypt
+    const bytes = CryptoJS.AES.decrypt(ciphertext, SECRET_KEY);
+    const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
+
+    if (!decryptedStr) {
+      // If empty, it means decryption failed (wrong key) OR it wasn't encrypted.
+      // Try parsing original ciphertext as JSON (legacy fallback)
+      return JSON.parse(ciphertext);
+    }
+
+    return JSON.parse(decryptedStr);
+  } catch (e) {
+    // If AES failed completely, try parsing content as plain JSON
+    try {
+      return JSON.parse(ciphertext);
+    } catch (err) {
+      console.warn("Failed to decrypt or parse chat data", err);
+      return [];
+    }
+  }
+}
 
 import { supabase } from './supabaseClient';
 // Configure Marked.js for custom code blocks
@@ -212,7 +254,16 @@ class SupabaseManager {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+
+      // Decrypt messages for each chat in history
+      const decryptedData = (data || []).map(chat => {
+        if (chat.messages) {
+          chat.messages = decryptData(chat.messages);
+        }
+        return chat;
+      });
+
+      return decryptedData;
     } catch (e) {
       console.error("Error fetching history:", e);
       return [];
@@ -229,7 +280,7 @@ class SupabaseManager {
           id: chatData.id,
           user_id: userId,
           title: chatData.title,
-          messages: chatData.messages,
+          messages: encryptData(chatData.messages), // Encrypt before saving
           updated_at: new Date()
         }, { onConflict: 'id' });
 
@@ -250,6 +301,11 @@ class SupabaseManager {
         .maybeSingle();
 
       if (error) throw error;
+
+      if (data && data.messages) {
+        data.messages = decryptData(data.messages);
+      }
+
       return data;
     } catch (e) {
       console.error("Error loading chat:", e);
