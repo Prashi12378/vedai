@@ -1450,6 +1450,18 @@ function initMainApp() {
   [fileInputImage, fileInputFile].forEach(input => {
     input.addEventListener('change', (e) => {
       if (e.target.files.length > 0) {
+        // --- Guest Upload Check ---
+        if (!chatManager.currentUser) {
+          let uploadCount = parseInt(localStorage.getItem('guest_upload_count') || '0');
+          if (uploadCount >= 1) {
+            showNotification("Guest limit: 1 upload allowed. Please Sign In.", "info");
+            document.getElementById('auth-modal').style.display = 'flex';
+            input.value = ''; // Reset
+            return;
+          }
+          localStorage.setItem('guest_upload_count', (uploadCount + 1).toString());
+        }
+
         chatManager.addMessage(`[Attachment Selected: ${e.target.files[0].name}](Functionality coming soon with Vision Model)`, 'ai', false);
         input.value = ''; // Reset
       }
@@ -1466,6 +1478,17 @@ function initMainApp() {
 
   document.getElementById('opt-take-photo').addEventListener('click', async () => {
     attachmentMenu.classList.add('hidden');
+
+    // --- Guest Upload Check ---
+    if (!chatManager.currentUser) {
+      let uploadCount = parseInt(localStorage.getItem('guest_upload_count') || '0');
+      if (uploadCount >= 1) {
+        showNotification("Guest limit: 1 upload allowed. Please Sign In.", "info");
+        document.getElementById('auth-modal').style.display = 'flex';
+        return;
+      }
+    }
+
     cameraModal.classList.remove('hidden');
     try {
       stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -1495,6 +1518,12 @@ function initMainApp() {
 
     // For now, simple feedback
     chatManager.addMessage(`[Photo Captured](Vision analysis coming soon)`, 'ai', false);
+
+    // --- Guest Upload Increment ---
+    if (!chatManager.currentUser) {
+      let uploadCount = parseInt(localStorage.getItem('guest_upload_count') || '0');
+      localStorage.setItem('guest_upload_count', (uploadCount + 1).toString());
+    }
   });
 
   function stopCamera() {
@@ -1505,9 +1534,22 @@ function initMainApp() {
     videoCallback.srcObject = null;
   }
 
-  // 4. Take Screenshot
+  // 3. Take Screenshot
   document.getElementById('opt-take-screenshot').addEventListener('click', async () => {
     attachmentMenu.classList.add('hidden');
+
+    // --- Guest Upload Check ---
+    if (!chatManager.currentUser) {
+      let uploadCount = parseInt(localStorage.getItem('guest_upload_count') || '0');
+      if (uploadCount >= 1) {
+        showNotification("Guest limit: 1 upload allowed. Please Sign In.", "info");
+        document.getElementById('auth-modal').style.display = 'flex';
+        return;
+      }
+      // Note: We increment ONLY if success, but for simplicity we can increment on trigger or result.
+      // Let's increment on result to be fair.
+    }
+
     try {
       const captureStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
       // We just want one frame, so essentially we treat it like the camera
@@ -1519,6 +1561,12 @@ function initMainApp() {
       track.stop();
 
       chatManager.addMessage(`[Screenshot Captured: ${bitmap.width}x${bitmap.height}](Vision analysis coming soon)`, 'ai', false);
+
+      // --- Guest Upload Increment ---
+      if (!chatManager.currentUser) {
+        let uploadCount = parseInt(localStorage.getItem('guest_upload_count') || '0');
+        localStorage.setItem('guest_upload_count', (uploadCount + 1).toString());
+      }
     } catch (err) {
       console.error("Screenshot failed", err);
     }
