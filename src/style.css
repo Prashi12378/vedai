@@ -644,6 +644,14 @@ body.dark-mode .history-item.active {
   color: #ff4d4d;
 }
 
+@media (max-width: 768px) {
+  .delete-chat-btn {
+    opacity: 1 !important;
+    color: #999;
+    /* Ensure visible default color */
+  }
+}
+
 body.dark-mode .sidebar-section-title {
   color: #666;
 }
