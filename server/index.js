@@ -123,11 +123,11 @@ Do NOT provide a made-up answer if you need to search. Just output the command.`
             stream: false,
         });
 
-        let reply = completion.choices[0].message.content;
+        let reply = completion.choices[0].message.content || "";
         console.log('📝 Initial Reply:', reply);
 
         // 2. Check for Search Command
-        const searchMatch = reply.match(/\[SEARCH:\s*(.*?)\]/);
+        const searchMatch = reply ? reply.match(/\[SEARCH:\s*(.*?)\]/) : null;
 
         if (searchMatch) {
             const query = searchMatch[1];
@@ -161,9 +161,10 @@ Do NOT provide a made-up answer if you need to search. Just output the command.`
         res.json({ reply });
 
     } catch (error) {
-        console.error('❌ Groq API Error:', error.message);
+        console.error('❌ Groq API Error:', error);
         res.status(500).json({
-            error: error.message || 'Sorry, I encountered an error communicating with Groq.'
+            error: 'Internal Server Error',
+            details: error.message || JSON.stringify(error)
         });
     }
 };
