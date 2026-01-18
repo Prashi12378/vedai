@@ -1216,8 +1216,10 @@ function initMainApp() {
         await chatManager.typeMessage(data.reply, 'ai');
       } else {
         console.error('Error in response:', data);
-        const errorDetail = data.error || data.message || `Status: ${res.status}`;
-        chatManager.addMessage(`Error: ${errorDetail}`, 'ai', false);
+        // Prioritize 'details' from our server, then 'error', then 'message'
+        const errorMsg = data.details || data.error || data.message || "Unknown Error";
+        const statusMsg = `Status: ${res.status}`;
+        chatManager.addMessage(`Connection Error (${statusMsg}):\n${JSON.stringify(errorMsg, null, 2)}`, 'ai', false);
       }
     } catch (err) {
       loading.remove();
