@@ -633,7 +633,7 @@ class ChatManager {
     showNotification("Chat deleted", "success");
 
     if (this.currentChatId === chatId) {
-      this.startChat();
+      this.startNewChat();
     } else {
       this.updateHistoryUI();
     }
@@ -1191,13 +1191,7 @@ function initMainApp() {
         messagesToSend.unshift({ role: 'system', content: systemContent });
       }
 
-      // If search is enabled, provide an instruction for the AI
-      if (isSearchEnabled) {
-        const lastMsg = messagesToSend[messagesToSend.length - 1];
-        if (lastMsg && lastMsg.role === 'user') {
-          lastMsg.content = `[SEARCH_QUERY: ${lastMsg.content}]\nPlease prioritize providing up-to-date information by searching if necessary.`;
-        }
-      }
+
 
       const res = await fetch('/api/chat', {
         method: 'POST',
