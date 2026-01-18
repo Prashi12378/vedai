@@ -857,6 +857,11 @@ function initMainApp() {
   setupPasswordToggle('auth-password', 'toggle-password');
   setupPasswordToggle('auth-confirm-password', 'toggle-confirm-password');
 
+  // Close Auth Modal
+  document.getElementById('close-auth-btn')?.addEventListener('click', () => {
+    document.getElementById('auth-modal').style.display = 'none';
+  });
+
   // Google Sign In
   const googleBtn = document.getElementById('google-signin-btn');
   if (googleBtn) {
