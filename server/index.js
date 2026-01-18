@@ -15,9 +15,11 @@ const __dirname = path.dirname(__filename);
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// Serve static files from the dist directory
-const distPath = path.join(__dirname, '../dist');
-app.use(express.static(distPath));
+// Serve static files from the dist directory (only for local development)
+if (!process.env.VERCEL) {
+    const distPath = path.join(__dirname, '../dist');
+    app.use(express.static(distPath));
+}
 
 
 
@@ -79,10 +81,13 @@ Always be polite and professional.`
         });
     }
 });
-// Fallback for SPA
-app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
-});
+// Fallback for SPA (only for local development)
+if (!process.env.VERCEL) {
+    app.get('*', (req, res) => {
+        const distPath = path.join(__dirname, '../dist');
+        res.sendFile(path.join(distPath, 'index.html'));
+    });
+}
 
 // For local development
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
