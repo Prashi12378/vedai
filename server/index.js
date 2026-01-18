@@ -55,7 +55,7 @@ async function performTavilySearch(query) {
         const data = await response.json();
 
         if (data.answer) {
-            return `Tavily Answer: ${data.answer}\n\nContext:\n${data.results.map(r => `- ${r.title}: ${r.content}`).join('\n')}`;
+            return `Tavily Answer: ${data.answer}\n\nContext:\n${data.results.map(r => `- ${r.title} (${r.url}): ${r.content}`).join('\n')}`;
         }
 
         return null;
