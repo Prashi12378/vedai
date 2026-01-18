@@ -1287,8 +1287,7 @@ function initMainApp() {
   const settingsModal = document.getElementById('settings-modal');
   const settingsBtn = document.getElementById('settings-btn');
   const closeSettingsBtn = document.getElementById('close-settings-btn');
-  const clearHistoryBtn = document.getElementById('clear-history-btn');
-  const exportHistoryBtn = document.getElementById('export-history-btn');
+
 
 
   const themeToggle = document.getElementById('theme-toggle');
@@ -1329,41 +1328,9 @@ function initMainApp() {
     settingsModal.classList.add('hidden');
   });
 
-  exportHistoryBtn.addEventListener('click', () => {
-    const history = chatManager.messages;
-    if (!history || history.length === 0) {
-      showNotification("No chat history to export", "info");
-      return;
-    }
 
-    const textContent = history.map(m => `[${m.role.toUpperCase()}]: ${m.content}`).join('\n\n');
-    const blob = new Blob([textContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
 
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `chat-export-${new Date().toISOString().slice(0, 10)}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
 
-    showNotification("Chat exported!", "success");
-  });
-
-  clearHistoryBtn.addEventListener('click', async () => {
-    showConfirmation(
-      "Clear Chat History?",
-      "Are you sure? This will delete all chat history from Supabase. This action cannot be undone.",
-      async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        await SupabaseManager.clearAll(user?.id);
-        chatManager.startNewChat();
-        settingsModal.classList.add('hidden');
-        showNotification('All chat history cleared!', 'success');
-      }
-    );
-  });
 
   // Sidebar Toggle
   // Sidebar Toggle
