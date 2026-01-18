@@ -1122,6 +1122,8 @@ function initMainApp() {
   });
 
   // State for generation
+  let isGenerating = false;
+  let abortController = null;
 
 
   const sendIcon = `
