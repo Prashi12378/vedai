@@ -307,6 +307,10 @@ body {
   flex-direction: column !important;
 }
 
+.message.user .actions-toolbar {
+  display: none !important;
+}
+
 .message.ai {
   align-self: flex-start;
   padding: 12px 0;
