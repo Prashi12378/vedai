@@ -276,6 +276,15 @@
           </select>
         </div>
 
+        <div class="setting-item-block" style="margin-top:15px;">
+          <label for="model-select" style="display:block; margin-bottom:5px;">AI Model</label>
+          <select id="model-select" class="edit-input">
+            <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Meta) - Default</option>
+            <option value="mixtral-8x7b-32768">Mixtral 8x7b (Mistral) - Fast</option>
+            <option value="gemma2-9b-it">Gemma 2 9B (Google) - Balanced</option>
+          </select>
+        </div>
+
         <div class="setting-item" style="margin-top:15px;">
           <span id="label-notifications">Enable Notifications</span>
           <label class="toggle-switch" for="notification-toggle" aria-labelledby="label-notifications">

@@ -1218,6 +1218,9 @@ function initMainApp() {
 
 
 
+      const currentSettings = SupabaseManager.getSettings();
+      const currentModel = currentSettings.model || 'llama-3.3-70b-versatile';
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -1225,7 +1228,7 @@ function initMainApp() {
         },
         body: JSON.stringify({
           history: messagesToSend,
-          model: selectedModel
+          model: currentModel
         }),
         signal: abortController.signal
       });
@@ -1353,10 +1356,9 @@ function initMainApp() {
   const settingsBtn = document.getElementById('settings-btn');
   const closeSettingsBtn = document.getElementById('close-settings-btn');
 
-
-
   const themeToggle = document.getElementById('theme-toggle');
   const langSelect = document.getElementById('language-select');
+  const modelSelect = document.getElementById('model-select');
   const notifToggle = document.getElementById('notification-toggle');
 
   settingsBtn.addEventListener('click', async () => {
@@ -1364,6 +1366,7 @@ function initMainApp() {
     // Set controls
     themeToggle.checked = settings.theme === 'dark';
     langSelect.value = settings.language || 'en';
+    modelSelect.value = settings.model || 'llama-3.3-70b-versatile';
     notifToggle.checked = settings.notifications !== false; // Default true
 
     settingsModal.classList.remove('hidden');
@@ -1374,6 +1377,7 @@ function initMainApp() {
     const newSettings = {
       theme: themeToggle.checked ? 'dark' : 'light',
       language: langSelect.value,
+      model: modelSelect.value,
       notifications: notifToggle.checked,
       systemInstruction: "You are VedAI, a helpful assistant."
     };
@@ -1381,12 +1385,12 @@ function initMainApp() {
     SupabaseManager.saveSettings(newSettings);
     chatManager.systemInstruction = newSettings.systemInstruction;
     applyTheme(); // Immediate effect
-
   };
 
   // Change Listeners
   themeToggle.addEventListener('change', saveSettings);
   langSelect.addEventListener('change', saveSettings);
+  modelSelect.addEventListener('change', saveSettings);
   notifToggle.addEventListener('change', saveSettings);
 
   closeSettingsBtn.addEventListener('click', () => {
