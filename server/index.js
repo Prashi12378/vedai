@@ -29,39 +29,7 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// --- Serper.dev Search Helper ---
-async function performWebSearch(query) {
-    if (!process.env.SERPER_API_KEY) {
-        console.warn('⚠️ SERPER_API_KEY missing');
-        return null;
-    }
 
-    try {
-        console.log(`🌐 Searching for: "${query}"...`);
-        const response = await fetch('https://google.serper.dev/search', {
-            method: 'POST',
-            headers: {
-                'X-API-KEY': process.env.SERPER_API_KEY,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ q: query, gl: 'in' }) // gl: 'in' for India specific results (cricket focus)
-        });
-
-        const data = await response.json();
-
-        // Format snippets into a readable context string
-        if (data.organic && data.organic.length > 0) {
-            return data.organic.slice(0, 5).map(result =>
-                `Title: ${result.title}\nSnippet: ${result.snippet}`
-            ).join('\n\n');
-        }
-
-        return "No organic search results found.";
-    } catch (err) {
-        console.error('❌ Search Error:', err);
-        return null;
-    }
-}
 
 // Serve static files from the dist directory (only for local development)
 if (!process.env.VERCEL) {
@@ -97,33 +65,11 @@ const handleChat = async (req, res) => {
             baseURL: "https://api.groq.com/openai/v1",
         });
 
-        const lastUserMsg = history[history.length - 1];
-        let searchContext = "";
-
-        // Check for Search Trigger [SEARCH_QUERY: query]
-        const searchMatch = lastUserMsg && lastUserMsg.content.match(/\[SEARCH_QUERY:\s*(.*?)\]/);
-
-        if (searchMatch) {
-            const rawQuery = searchMatch[1];
-            const cleanMessage = lastUserMsg.content.replace(/\[SEARCH_QUERY:.*?\]/, "").trim();
-
-            // 1. Perform Search
-            const searchData = await performWebSearch(rawQuery);
-
-            if (searchData) {
-                searchContext = `\n\nCURRENT WEB SEARCH CONTEXT (Real-time Information):\n${searchData}\n\n`;
-                // Update message for AI (keep clean for user UI later)
-                lastUserMsg.content = cleanMessage;
-            }
-        }
-
         const messages = [
             {
                 role: "system",
                 content: `You are VedAI, an advanced AI assistant powered by Groq (running ${model || 'Llama 3'}).
 Your goal is to provide helpful, accurate, and concise responses.
-
-${searchContext ? "IMPORTANT: You have access to the following REAL-TIME information from a web search. You MUST use this information to answer the user's question. Do not say you don't have access to real-time info if this context provides the answer.\n" + searchContext : ""}
 
 Always be polite and professional.`
             },

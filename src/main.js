@@ -1122,20 +1122,7 @@ function initMainApp() {
   });
 
   // State for generation
-  let isGenerating = false;
-  let abortController = null;
-  let isSearchEnabled = false;
 
-  const searchBtn = document.getElementById('search-btn');
-  if (searchBtn) {
-    searchBtn.addEventListener('click', () => {
-      isSearchEnabled = !isSearchEnabled;
-      searchBtn.classList.toggle('active', isSearchEnabled);
-      if (isSearchEnabled) {
-        showNotification("Web Search mode enabled", "info");
-      }
-    });
-  }
 
   const sendIcon = `
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
