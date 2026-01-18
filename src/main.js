@@ -1167,12 +1167,7 @@ function initMainApp() {
       let messagesToSend = [...chatManager.messages];
 
       let systemContent = settings.systemInstruction || "";
-      if (chatManager.currentUser) {
-        const name = chatManager.currentUser.user_metadata?.display_name || chatManager.currentUser.email.split('@')[0];
-        // Append name context
-        if (systemContent) systemContent += "\n\n";
-        systemContent += `User's name is ${name}.`;
-      }
+
 
       // Append Language Instruction
       if (settings.language && settings.language !== 'en') {
@@ -1254,6 +1249,20 @@ function initMainApp() {
 
     const text = input.value.trim();
     if (!text) return;
+
+    // --- Guest Usage Limit Check ---
+    if (!chatManager.currentUser) {
+      const GUEST_LIMIT = 5;
+      let guestCount = parseInt(localStorage.getItem('guest_msg_count') || '0');
+
+      if (guestCount >= GUEST_LIMIT) {
+        showNotification("Free limit reached! Please Sign In to continue.", "info");
+        document.getElementById('auth-modal').style.display = 'flex';
+        return; // Block sending
+      }
+
+      localStorage.setItem('guest_msg_count', (guestCount + 1).toString());
+    }
 
     chatManager.addMessage(text, 'user');
     input.value = '';
