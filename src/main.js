@@ -452,6 +452,7 @@ class ChatManager {
     msgDiv.className = `message ${sender} `;
 
     let contentDiv;
+    let wrapperDiv;
 
     if (sender === 'ai') {
       const avatarDiv = document.createElement('div');
@@ -459,14 +460,17 @@ class ChatManager {
       avatarDiv.innerHTML = `<img src="/logo.png" alt="VedAI">`;
       msgDiv.appendChild(avatarDiv);
 
-      const wrapperDiv = document.createElement('div');
+      wrapperDiv = document.createElement('div');
       wrapperDiv.className = 'message-content-wrapper';
       contentDiv = document.createElement('div');
       wrapperDiv.appendChild(contentDiv);
       msgDiv.appendChild(wrapperDiv);
     } else {
+      wrapperDiv = document.createElement('div');
+      wrapperDiv.className = 'message-content-wrapper';
       contentDiv = document.createElement('div');
-      msgDiv.appendChild(contentDiv);
+      wrapperDiv.appendChild(contentDiv);
+      msgDiv.appendChild(wrapperDiv);
     }
 
     const chatContainer = document.getElementById('chat-container');
@@ -496,13 +500,13 @@ class ChatManager {
     contentDiv.innerHTML = marked.parse(text);
 
     // Add Toolbar (only after typing done)
-    if (sender === 'ai') {
-      const actionsToolbar = createActionsToolbar(text);
+    const actionsToolbar = createActionsToolbar(text);
+    if (wrapperDiv) {
       wrapperDiv.appendChild(actionsToolbar);
-
-      // Re-scroll to ensure options are visible
-      chatContainer.scrollTop = chatContainer.scrollHeight;
     }
+
+    // Re-scroll to ensure options are visible
+    chatContainer.scrollTop = chatContainer.scrollHeight;
   }
 
   renderAllMessages() {
