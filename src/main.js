@@ -455,11 +455,6 @@ class ChatManager {
     let wrapperDiv;
 
     if (sender === 'ai') {
-      const avatarDiv = document.createElement('div');
-      avatarDiv.className = 'message-avatar';
-      avatarDiv.innerHTML = `<img src="/logo.png" alt="VedAI">`;
-      msgDiv.appendChild(avatarDiv);
-
       wrapperDiv = document.createElement('div');
       wrapperDiv.className = 'message-content-wrapper';
       contentDiv = document.createElement('div');
@@ -518,11 +513,6 @@ class ChatManager {
       msgDiv.className = `message ${sender} `;
 
       if (sender === 'ai') {
-        const avatarDiv = document.createElement('div');
-        avatarDiv.className = 'message-avatar';
-        avatarDiv.innerHTML = `<img src="/logo.png" alt="VedAI">`;
-        msgDiv.appendChild(avatarDiv);
-
         const wrapperDiv = document.createElement('div');
         wrapperDiv.className = 'message-content-wrapper';
 

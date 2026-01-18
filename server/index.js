@@ -121,7 +121,10 @@ const handleChat = async (req, res) => {
             {
                 role: "system",
                 content: `You are VedAI, an advanced AI assistant powered by Groq (running ${model || 'Llama 3'}).
-Your goal is to provide helpful, accurate, and concise responses.${searchContext}
+Your goal is to provide helpful, accurate, and concise responses.
+
+${searchContext ? "IMPORTANT: You have access to the following REAL-TIME information from a web search. You MUST use this information to answer the user's question. Do not say you don't have access to real-time info if this context provides the answer.\n" + searchContext : ""}
+
 Always be polite and professional.`
             },
             ...history
