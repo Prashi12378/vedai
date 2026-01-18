@@ -21,13 +21,49 @@ app.get('/api/health', (req, res) => {
         status: 'ok',
         env: {
             GROQ: !!process.env.GROQ_API_KEY,
-            SERPER: !!process.env.SERPER_API_KEY,
+            TAVILY: !!process.env.TAVILY_API_KEY,
             SUPABASE_URL: !!process.env.VITE_SUPABASE_URL,
             SUPABASE_KEY: !!process.env.VITE_SUPABASE_ANON_KEY,
             VERCEL: !!process.env.VERCEL
         }
     });
 });
+
+// --- Tavily Search Helper ---
+async function performTavilySearch(query) {
+    if (!process.env.TAVILY_API_KEY) {
+        console.warn('⚠️ TAVILY_API_KEY missing');
+        return null;
+    }
+
+    try {
+        console.log(`🌐 Tavily Searching for: "${query}"...`);
+        const response = await fetch('https://api.tavily.com/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                api_key: process.env.TAVILY_API_KEY,
+                query: query,
+                search_depth: "basic",
+                include_answer: true,
+                max_results: 5
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.answer) {
+            return `Tavily Answer: ${data.answer}\n\nContext:\n${data.results.map(r => `- ${r.title}: ${r.content}`).join('\n')}`;
+        }
+
+        return null;
+    } catch (err) {
+        console.error('❌ Tavily Error:', err);
+        return null;
+    }
+}
 
 
 
@@ -65,26 +101,64 @@ const handleChat = async (req, res) => {
             baseURL: "https://api.groq.com/openai/v1",
         });
 
-        const messages = [
-            {
-                role: "system",
-                content: `You are VedAI, an advanced AI assistant powered by Groq (running ${model || 'Llama 3'}).
+        // Definition of the base system prompt
+        const baseSystemPrompt = `You are VedAI, an advanced AI assistant powered by Groq (running ${model || 'Llama 3'}).
 Your goal is to provide helpful, accurate, and concise responses.
+To Access Real-Time Information:
+If the user asks about current events, sports scores, news, or anything requiring real-time data, you must output a search command.
+Format: [SEARCH: <query>]
+Example: [SEARCH: latest India vs NZ score]
+Do NOT provide a made-up answer if you need to search. Just output the command.`;
 
-Always be polite and professional.`
-            },
+        // 1. Initial Call (Tool Detection)
+        let messages = [
+            { role: "system", content: baseSystemPrompt },
             ...history
         ];
 
-        console.log('🤖 Sending request to Groq...');
-        const completion = await client.chat.completions.create({
+        console.log('🤖 Sending initial request to Groq...');
+        let completion = await client.chat.completions.create({
             model: model || "llama-3.3-70b-versatile",
             messages: messages,
             stream: false,
         });
 
-        const reply = completion.choices[0].message.content;
-        console.log('✅ Groq replied');
+        let reply = completion.choices[0].message.content;
+        console.log('📝 Initial Reply:', reply);
+
+        // 2. Check for Search Command
+        const searchMatch = reply.match(/\[SEARCH:\s*(.*?)\]/);
+
+        if (searchMatch) {
+            const query = searchMatch[1];
+            console.log('🕵️‍♂️ Detected Search Intent:', query);
+
+            // 3. Perform Search
+            const searchResults = await performTavilySearch(query);
+
+            if (searchResults) {
+                console.log('✅ Got Search Results, re-prompting AI...');
+
+                // 4. Re-prompt with Context
+                // We add the search command as a "assistant" message, and the results as "system" or "tool" context
+                messages.push({ role: "assistant", content: reply });
+                messages.push({
+                    role: "system",
+                    content: `SEARCH RESULTS FOR "${query}":\n${searchResults}\n\nINSTRUCTIONS: Use the above results to answer the user's original question which was: "${history[history.length - 1].content}". Cite the results if possible.`
+                });
+
+                completion = await client.chat.completions.create({
+                    model: model || "llama-3.3-70b-versatile",
+                    messages: messages,
+                    stream: false,
+                });
+
+                reply = completion.choices[0].message.content;
+            } else {
+                reply = "I tried to search for that but couldn't retrieve the information currently.";
+            }
+        }
+
         res.json({ reply });
 
     } catch (error) {
