@@ -791,6 +791,21 @@ function initMainApp() {
     }
   }
 
+  // Check for missing credentials (Vercel Build Protection)
+  if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+    const errorMsg = "⚠️ Configuration Error: Supabase credentials are missing. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your Vercel Environment Variables and redeploy.";
+    console.error(errorMsg);
+
+    // Show a permanent notification to the user
+    setTimeout(() => {
+      if (window.showNotification) {
+        showNotification(errorMsg, "error");
+      } else {
+        alert(errorMsg);
+      }
+    }, 1000);
+  }
+
   checkAuth();
 
   // Listen for auth changes
