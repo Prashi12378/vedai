@@ -39,7 +39,8 @@ if (!process.env.VERCEL) {
 
 
 
-app.post('/api/chat', async (req, res) => {
+// Define routes
+const handleChat = async (req, res) => {
     console.log('📨 API/CHAT Request received');
     try {
         const { history, model } = req.body;
@@ -53,22 +54,19 @@ app.post('/api/chat', async (req, res) => {
         // Check for Groq API Key
         if (!process.env.GROQ_API_KEY) {
             console.error('❌ Missing GROQ_API_KEY');
-            return res.json({ reply: 'Please set your GROQ_API_KEY in the .env file to use the Groq API.' });
+            return res.json({ reply: 'Please set your GROQ_API_KEY in the Vercel Settings to use the AI features.' });
         }
 
-        // Initialize OpenAI client for Groq
         const client = new OpenAI({
             apiKey: process.env.GROQ_API_KEY,
             baseURL: "https://api.groq.com/openai/v1",
         });
 
-        // Convert history to OpenAI format
         const messages = [
             {
                 role: "system",
                 content: `You are VedAI, an advanced AI assistant powered by Groq (running ${model || 'Llama 3'}).
 Your goal is to provide helpful, accurate, and concise responses.
-You have a "memory" of previous messages in this conversation.
 Always be polite and professional.`
             },
             ...history
@@ -87,16 +85,14 @@ Always be polite and professional.`
 
     } catch (error) {
         console.error('❌ Groq API Error:', error.message);
-        if (error.response) {
-            console.error('Status:', error.response.status);
-            console.error('Data:', JSON.stringify(error.response.data, null, 2));
-        }
-        res.json({
-            reply: 'Sorry, I encountered an error communicating with Groq.',
-            error: error.message
+        res.status(500).json({
+            error: error.message || 'Sorry, I encountered an error communicating with Groq.'
         });
     }
-});
+};
+
+app.post('/api/chat', handleChat);
+app.post('/chat', handleChat); // Alias for Vercel functions mounted at /api/index.js
 // Fallback for SPA (only for local development)
 if (!process.env.VERCEL) {
     app.get('*', (req, res) => {

@@ -1241,14 +1241,16 @@ function initMainApp() {
         await chatManager.typeMessage(data.reply, 'ai');
       } else {
         console.error('Error in response:', data);
-        chatManager.addMessage(`Error: ${data.error || 'Unknown error'} `, 'ai', false);
+        const errorDetail = data.error || data.message || `Status: ${res.status}`;
+        chatManager.addMessage(`Error: ${errorDetail}`, 'ai', false);
       }
     } catch (err) {
       loading.remove();
+      console.error('Fetch Error:', err);
       if (err.name === 'AbortError') {
         chatManager.addMessage("Generation stopped by user.", 'ai', false);
       } else {
-        chatManager.addMessage("Connection error. Please check your network.", 'ai', false);
+        chatManager.addMessage(`Connection error (${err.message}). Please check the Vercel logs.`, 'ai', false);
       }
     } finally {
       // Reset to "Send" state
