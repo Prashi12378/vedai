@@ -1358,7 +1358,6 @@ function initMainApp() {
 
   const themeToggle = document.getElementById('theme-toggle');
   const langSelect = document.getElementById('language-select');
-  const modelSelect = document.getElementById('model-select');
   const notifToggle = document.getElementById('notification-toggle');
 
   settingsBtn.addEventListener('click', async () => {
@@ -1366,7 +1365,6 @@ function initMainApp() {
     // Set controls
     themeToggle.checked = settings.theme === 'dark';
     langSelect.value = settings.language || 'en';
-    modelSelect.value = settings.model || 'llama-3.3-70b-versatile';
     notifToggle.checked = settings.notifications !== false; // Default true
 
     settingsModal.classList.remove('hidden');
@@ -1377,7 +1375,6 @@ function initMainApp() {
     const newSettings = {
       theme: themeToggle.checked ? 'dark' : 'light',
       language: langSelect.value,
-      model: modelSelect.value,
       notifications: notifToggle.checked,
       systemInstruction: "You are VedAI, a helpful assistant."
     };
@@ -1390,7 +1387,6 @@ function initMainApp() {
   // Change Listeners
   themeToggle.addEventListener('change', saveSettings);
   langSelect.addEventListener('change', saveSettings);
-  modelSelect.addEventListener('change', saveSettings);
   notifToggle.addEventListener('change', saveSettings);
 
   closeSettingsBtn.addEventListener('click', () => {
@@ -1620,6 +1616,27 @@ function initMainApp() {
   const modelDropdown = document.getElementById('model-dropdown');
   const modelOptions = document.querySelectorAll('.model-option');
 
+  // Initialize from saved settings
+  if (modelBtn) {
+    const savedSettings = SupabaseManager.getSettings();
+    const savedModel = savedSettings.model || 'llama-3.3-70b-versatile';
+
+    // Find matching option or default
+    const matchingOption = Array.from(modelOptions).find(opt => opt.dataset.value === savedModel);
+    if (matchingOption) {
+      const name = matchingOption.querySelector('.model-name').textContent;
+      modelBtn.dataset.value = savedModel;
+      modelBtn.innerHTML = `
+            <span class="model-text">${name}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 6px;">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          `;
+      modelOptions.forEach(opt => opt.classList.remove('selected'));
+      matchingOption.classList.add('selected');
+    }
+  }
+
   if (modelBtn && modelDropdown) {
     // Toggle Dropdown
     modelBtn.addEventListener('click', (e) => {
@@ -1648,6 +1665,11 @@ function initMainApp() {
 
         // Close Dropdown
         modelDropdown.classList.add('hidden');
+
+        // Save to Settings
+        const currentSettings = SupabaseManager.getSettings();
+        currentSettings.model = value;
+        SupabaseManager.saveSettings(currentSettings);
       });
     });
 
