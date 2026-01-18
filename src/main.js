@@ -499,13 +499,13 @@ class ChatManager {
     // Finalize
     contentDiv.innerHTML = marked.parse(text);
 
-    // Add Toolbar (only after typing done)
-    const actionsToolbar = createActionsToolbar(text);
-    if (wrapperDiv) {
+    // Add Toolbar (only after typing done for AI)
+    if (sender === 'ai' && wrapperDiv) {
+      const actionsToolbar = createActionsToolbar(text);
       wrapperDiv.appendChild(actionsToolbar);
     }
 
-    // Re-scroll to ensure options are visible
+    // Re-scroll to ensure messages are visible
     chatContainer.scrollTop = chatContainer.scrollHeight;
   }
 
@@ -541,8 +541,6 @@ class ChatManager {
         contentDiv.textContent = msg.content;
         wrapperDiv.appendChild(contentDiv);
 
-        const actionsToolbar = createActionsToolbar(msg.content);
-        wrapperDiv.appendChild(actionsToolbar);
         msgDiv.appendChild(wrapperDiv);
 
         const editIcon = document.createElement('div');
