@@ -109,7 +109,7 @@ const handleChat = async (req, res) => {
 
         if (hasImages) {
             console.log('🖼️ Image detected in conversation history. Switching to Vision Model.');
-            selectedModel = 'llama-4-scout-17b-16e-instruct';
+            selectedModel = 'llama-3.2-90b-vision-preview';
         }
 
         console.log('📝 Using Model:', selectedModel);
@@ -181,9 +181,15 @@ Do NOT provide a made-up answer if you need to search. Just output the command.`
 
     } catch (error) {
         console.error('❌ Groq API Error:', error);
+
+        // Improve Error Logging
+        if (error.response) {
+            console.error('❌ Groq Error Data:', JSON.stringify(error.response.data));
+        }
+
         res.status(500).json({
             error: 'Internal Server Error',
-            details: error.message || JSON.stringify(error)
+            details: error.response?.data?.error?.message || error.message || JSON.stringify(error)
         });
     }
 };
