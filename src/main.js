@@ -18,6 +18,16 @@ function encryptData(data) {
   }
 }
 
+// Helper: File to Base64
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+}
+
 // Helper: Decrypt
 function decryptData(ciphertext) {
   try {
@@ -446,9 +456,24 @@ class ChatManager {
     this.updateHistoryUI(); // Highlight active chat
   }
 
-  addMessage(text, sender, save = true) {
+  addMessage(content, sender, save = true) {
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${sender} `;
+
+    // Resolve content to string for markdown parsing if it's simple text, 
+    // or handle array for multimodal
+    let textContent = "";
+    let images = [];
+
+    if (Array.isArray(content)) {
+      // Multimodal
+      content.forEach(item => {
+        if (item.type === 'text') textContent += item.text;
+        if (item.type === 'image_url') images.push(item.image_url.url);
+      });
+    } else {
+      textContent = content; // Legacy string support
+    }
 
     if (sender === 'ai') {
       // Avatar
@@ -462,10 +487,21 @@ class ChatManager {
       wrapperDiv.className = 'message-content-wrapper';
 
       const contentDiv = document.createElement('div');
-      contentDiv.innerHTML = marked.parse(text);
+      contentDiv.innerHTML = marked.parse(textContent);
       wrapperDiv.appendChild(contentDiv);
 
-      const actionsToolbar = createActionsToolbar(text);
+      // Render Images if any
+      images.forEach(imgSrc => {
+        const imgEl = document.createElement('img');
+        imgEl.src = imgSrc;
+        imgEl.className = 'chat-image-attachment';
+        imgEl.style.maxWidth = '100%';
+        imgEl.style.borderRadius = '8px';
+        imgEl.style.marginTop = '10px';
+        contentDiv.appendChild(imgEl);
+      });
+
+      const actionsToolbar = createActionsToolbar(textContent);
       wrapperDiv.appendChild(actionsToolbar);
       msgDiv.appendChild(wrapperDiv);
     } else {
@@ -474,10 +510,28 @@ class ChatManager {
       wrapperDiv.className = 'message-content-wrapper';
 
       const contentDiv = document.createElement('div');
-      contentDiv.textContent = text;
+      // For user, just show text and images. No complex markdown needed usually, but consistent is good.
+      // But standard user msg is plain text usually.
+      if (textContent) {
+        const textNode = document.createElement('div');
+        textNode.textContent = textContent;
+        contentDiv.appendChild(textNode);
+      }
+
+      // Render Images if any
+      images.forEach(imgSrc => {
+        const imgEl = document.createElement('img');
+        imgEl.src = imgSrc;
+        imgEl.className = 'chat-image-attachment';
+        imgEl.style.maxWidth = '100%'; // Limit size
+        imgEl.style.borderRadius = '8px';
+        imgEl.style.marginTop = '10px';
+        contentDiv.appendChild(imgEl);
+      });
+
       wrapperDiv.appendChild(contentDiv);
 
-      const actionsToolbar = createActionsToolbar(text);
+      const actionsToolbar = createActionsToolbar(textContent);
       wrapperDiv.appendChild(actionsToolbar);
       msgDiv.appendChild(wrapperDiv);
 
@@ -489,8 +543,11 @@ class ChatManager {
           <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
         </svg>
       `;
-      editIcon.onclick = () => enableEditMode(msgDiv, text);
-      msgDiv.appendChild(editIcon);
+      // Edit only works for text content for now
+      if (!images.length) {
+        editIcon.onclick = () => enableEditMode(msgDiv, textContent);
+        msgDiv.appendChild(editIcon);
+      }
     }
 
     const chatContainer = document.getElementById('chat-container');
@@ -498,7 +555,13 @@ class ChatManager {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 
     if (save) {
-      this.messages.push({ role: sender === 'ai' ? 'assistant' : 'user', content: text });
+      // Determine what to push to history
+      // If content was string, push string (legacy/simple). 
+      // If array, push array.
+      // Actually, for consistency, if we have images, we MUST push array.
+      // If just text, we can push string or array. Let's keep existing consistency if possible, 
+      // but Backend detects array. 
+      this.messages.push({ role: sender === 'ai' ? 'assistant' : 'user', content: content });
       this.saveToStorage();
     }
   }
@@ -564,19 +627,47 @@ class ChatManager {
     const chatContainer = document.getElementById('chat-container');
     chatContainer.innerHTML = '';
     this.messages.forEach((msg, index) => {
+      // Re-use addMessage logic for rendering consistency, but without saving
+      // However, addMessage appends to DOM. We want that.
+      // But addMessage does `save=true` by default. We can call a render helper or just duplicate logic?
+      // Better: refactor addMessage to separate render and save.
+      // For now, let's just implement the loop here manually to match addMessage logic.
+
       const msgDiv = document.createElement('div');
       const sender = msg.role === 'assistant' ? 'ai' : 'user';
       msgDiv.className = `message ${sender} `;
+
+      let textContent = "";
+      let images = [];
+
+      if (Array.isArray(msg.content)) {
+        msg.content.forEach(item => {
+          if (item.type === 'text') textContent += item.text;
+          if (item.type === 'image_url') images.push(item.image_url.url);
+        });
+      } else {
+        textContent = msg.content;
+      }
 
       if (sender === 'ai') {
         const wrapperDiv = document.createElement('div');
         wrapperDiv.className = 'message-content-wrapper';
 
         const contentDiv = document.createElement('div');
-        contentDiv.innerHTML = marked.parse(msg.content);
+        contentDiv.innerHTML = marked.parse(textContent);
         wrapperDiv.appendChild(contentDiv);
 
-        const actionsToolbar = createActionsToolbar(msg.content);
+        images.forEach(imgSrc => {
+          const imgEl = document.createElement('img');
+          imgEl.src = imgSrc;
+          imgEl.className = 'chat-image-attachment';
+          imgEl.style.maxWidth = '100%';
+          imgEl.style.borderRadius = '8px';
+          imgEl.style.marginTop = '10px';
+          contentDiv.appendChild(imgEl);
+        });
+
+        const actionsToolbar = createActionsToolbar(textContent);
         wrapperDiv.appendChild(actionsToolbar);
         msgDiv.appendChild(wrapperDiv);
       } else {
@@ -584,9 +675,23 @@ class ChatManager {
         wrapperDiv.className = 'message-content-wrapper';
 
         const contentDiv = document.createElement('div');
-        contentDiv.textContent = msg.content;
-        wrapperDiv.appendChild(contentDiv);
+        if (textContent) {
+          const textNode = document.createElement('div');
+          textNode.textContent = textContent;
+          contentDiv.appendChild(textNode);
+        }
 
+        images.forEach(imgSrc => {
+          const imgEl = document.createElement('img');
+          imgEl.src = imgSrc;
+          imgEl.className = 'chat-image-attachment';
+          imgEl.style.maxWidth = '100%';
+          imgEl.style.borderRadius = '8px';
+          imgEl.style.marginTop = '10px';
+          contentDiv.appendChild(imgEl);
+        });
+
+        wrapperDiv.appendChild(contentDiv);
         msgDiv.appendChild(wrapperDiv);
 
         const editIcon = document.createElement('div');
@@ -597,8 +702,10 @@ class ChatManager {
             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
           </svg>
         `;
-        editIcon.onclick = () => enableEditMode(msgDiv, msg.content, index);
-        msgDiv.appendChild(editIcon);
+        if (!images.length) {
+          editIcon.onclick = () => enableEditMode(msgDiv, textContent, index);
+          msgDiv.appendChild(editIcon);
+        }
       }
 
       chatContainer.appendChild(msgDiv);
@@ -1479,7 +1586,7 @@ function initMainApp() {
 
   // Handle File Inputs
   [fileInputImage, fileInputFile].forEach(input => {
-    input.addEventListener('change', (e) => {
+    input.addEventListener('change', async (e) => {
       if (e.target.files.length > 0) {
         // --- Guest Upload Check ---
         if (!chatManager.currentUser) {
@@ -1493,8 +1600,24 @@ function initMainApp() {
           localStorage.setItem('guest_upload_count', (uploadCount + 1).toString());
         }
 
-        chatManager.addMessage(`[Attachment Selected: ${e.target.files[0].name}](Functionality coming soon with Vision Model)`, 'ai', false);
-        input.value = ''; // Reset
+        const file = e.target.files[0];
+        try {
+          const base64 = await fileToBase64(file);
+          // Construct Multimodal Message
+          const content = [
+            { type: "text", text: `I have uploaded an image: ${file.name}` },
+            { type: "image_url", image_url: { url: base64 } }
+          ];
+
+          chatManager.addMessage(content, 'user', true);
+          input.value = ''; // Reset
+
+          // Trigger Response immediately
+          await generateResponse();
+        } catch (err) {
+          console.error("File Read Error:", err);
+          showNotification("Failed to read file", "error");
+        }
       }
     });
   });
@@ -1547,14 +1670,21 @@ function initMainApp() {
     stopCamera();
     cameraModal.classList.add('hidden');
 
-    // For now, simple feedback
-    chatManager.addMessage(`[Photo Captured](Vision analysis coming soon)`, 'ai', false);
+    // Send Photo
+    const content = [
+      { type: "text", text: "I have taken a photo." },
+      { type: "image_url", image_url: { url: dataUrl } }
+    ];
+    chatManager.addMessage(content, 'user', true);
 
     // --- Guest Upload Increment ---
     if (!chatManager.currentUser) {
       let uploadCount = parseInt(localStorage.getItem('guest_upload_count') || '0');
       localStorage.setItem('guest_upload_count', (uploadCount + 1).toString());
     }
+
+    // Trigger Generation
+    generateResponse();
   });
 
   function stopCamera() {
@@ -1591,13 +1721,29 @@ function initMainApp() {
       // Stop sharing immediately after grab
       track.stop();
 
-      chatManager.addMessage(`[Screenshot Captured: ${bitmap.width}x${bitmap.height}](Vision analysis coming soon)`, 'ai', false);
+      const dataUrl = await new Promise(resolve => {
+        const canvas = document.createElement('canvas');
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(bitmap, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      });
+
+      const content = [
+        { type: "text", text: "I have taken a screenshot." },
+        { type: "image_url", image_url: { url: dataUrl } }
+      ];
+      chatManager.addMessage(content, 'user', true);
 
       // --- Guest Upload Increment ---
       if (!chatManager.currentUser) {
         let uploadCount = parseInt(localStorage.getItem('guest_upload_count') || '0');
         localStorage.setItem('guest_upload_count', (uploadCount + 1).toString());
       }
+
+      // Trigger Generation
+      generateResponse();
     } catch (err) {
       console.error("Screenshot failed", err);
     }

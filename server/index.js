@@ -82,8 +82,10 @@ if (!process.env.VERCEL) {
 const handleChat = async (req, res) => {
     console.log('📨 API/CHAT Request received');
     try {
-        const { history, model } = req.body;
-        console.log('📝 Model:', model);
+        const { history, model: requestedModel } = req.body; // Rename to avoid confusion
+
+        // Default Text Model
+        let selectedModel = requestedModel || 'llama-3.3-70b-versatile';
 
         if (!history || !Array.isArray(history) || history.length === 0) {
             console.warn('⚠️ No history provided');
@@ -101,8 +103,21 @@ const handleChat = async (req, res) => {
             baseURL: "https://api.groq.com/openai/v1",
         });
 
+        // --- VISION DETECTION LOGIC ---
+        // Check if any message in history has images
+        const hasImages = history.some(msg => Array.isArray(msg.content) && msg.content.some(c => c.type === 'image_url'));
+
+        if (hasImages) {
+            console.log('🖼️ Image detected in conversation history. Switching to Vision Model.');
+            selectedModel = 'llama-3.2-90b-vision-preview';
+        }
+
+        console.log('📝 Using Model:', selectedModel);
+
         // Definition of the base system prompt
-        const baseSystemPrompt = `You are VedAI, an advanced AI assistant powered by Groq (running ${model || 'Llama 3'}).
+        // Note: Vision models often perform better with simpler system prompts or none, 
+        // but we'll keep the persona.
+        const baseSystemPrompt = `You are VedAI, an advanced AI assistant powered by Groq (running ${selectedModel}).
 Your goal is to provide helpful, accurate, and concise responses.
 To Access Real-Time Information:
 If the user asks about current events, sports scores, news, or anything requiring real-time data, you must output a search command.
@@ -118,7 +133,7 @@ Do NOT provide a made-up answer if you need to search. Just output the command.`
 
         console.log('🤖 Sending initial request to Groq...');
         let completion = await client.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
+            model: selectedModel,
             messages: messages,
             stream: false,
         });
@@ -141,14 +156,17 @@ Do NOT provide a made-up answer if you need to search. Just output the command.`
 
                 // 4. Re-prompt with Context
                 // We add the search command as a "assistant" message, and the results as "system" or "tool" context
+                // NOTE: For Vision model, we might want to be careful with complex re-prompting if it gets confused,
+                // but usually it handles text follow-ups fine.
                 messages.push({ role: "assistant", content: reply });
                 messages.push({
                     role: "system",
                     content: `SEARCH RESULTS FOR "${query}":\n${searchResults}\n\nINSTRUCTIONS: Use the above results to answer the user's original question which was: "${history[history.length - 1].content}". Cite the results if possible.\n\nCRITICAL: You MUST answer in the same language as the user's original message. If the user asked in Hindi, answer in Hindi. If Spanish, answer in Spanish.`
                 });
 
+                // Use the same selected model (Vision or Text)
                 completion = await client.chat.completions.create({
-                    model: "llama-3.3-70b-versatile",
+                    model: selectedModel,
                     messages: messages,
                     stream: false,
                 });
