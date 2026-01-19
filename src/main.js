@@ -718,7 +718,19 @@ class ChatManager {
       id: this.currentChatId,
       date: new Date().toLocaleDateString(),
       // Use first user message as title, or "New Chat"
-      title: this.messages.find(m => m.role === 'user')?.content.substring(0, 30) + '...' || 'New Chat',
+      title: (() => {
+        const firstMsg = this.messages.find(m => m.role === 'user');
+        if (!firstMsg) return 'New Chat';
+
+        let text = "";
+        if (Array.isArray(firstMsg.content)) {
+          const textItem = firstMsg.content.find(c => c.type === 'text');
+          text = textItem ? textItem.text : "Image Attachment";
+        } else {
+          text = firstMsg.content;
+        }
+        return text.substring(0, 30) + '...';
+      })() || 'New Chat',
       messages: this.messages,
       createdAt: Date.now() // For sorting
     };
