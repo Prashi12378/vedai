@@ -85,7 +85,7 @@ const handleChat = async (req, res) => {
         const { history, model: requestedModel } = req.body; // Rename to avoid confusion
 
         // Default Text Model
-        let selectedModel = requestedModel || 'llama-3.3-70b-versatile';
+        let selectedModel = requestedModel || 'llama-3.1-8b-instant';
 
         if (!history || !Array.isArray(history) || history.length === 0) {
             console.warn('⚠️ No history provided');
