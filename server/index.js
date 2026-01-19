@@ -109,7 +109,7 @@ const handleChat = async (req, res) => {
 
         if (hasImages) {
             console.log('🖼️ Image detected in conversation history. Switching to Vision Model.');
-            selectedModel = 'llama-3.2-90b-vision-preview';
+            selectedModel = 'llama-3.2-90b-vision-instruct';
         }
 
         console.log('📝 Using Model:', selectedModel);
