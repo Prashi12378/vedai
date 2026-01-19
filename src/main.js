@@ -33,14 +33,36 @@ function decryptData(ciphertext) {
   try {
     if (!ciphertext) return [];
 
+    // Check for corrupted string "[object Object]"
+    if (ciphertext === "[object Object]") {
+      console.warn("Found corrupted chat data '[object Object]'. Returning empty history.");
+      return [];
+    }
+
     // Try AES Decrypt
     const bytes = CryptoJS.AES.decrypt(ciphertext, SECRET_KEY);
-    const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
+    let decryptedStr = "";
+
+    try {
+      decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
+    } catch (err) {
+      console.warn("AES Decrpyt toString failed:", err);
+    }
 
     if (!decryptedStr) {
-      // If empty, it means decryption failed (wrong key) OR it wasn't encrypted.
-      // Try parsing original ciphertext as JSON (legacy fallback)
-      return JSON.parse(ciphertext);
+      // Decryption failed. This happens if:
+      // 1. Wrong key (User changed .env)
+      // 2. Data was not encrypted (Legacy plain text)
+      // 3. Data is corrupted
+
+      console.warn("Decryption failed (empty result). Attempting fallback to JSON parse of original text.");
+
+      try {
+        return JSON.parse(ciphertext);
+      } catch (err) {
+        console.warn("Fallback JSON parse failed. Returning empty.", err);
+        return [];
+      }
     }
 
     return JSON.parse(decryptedStr);
