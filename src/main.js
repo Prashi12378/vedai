@@ -1683,7 +1683,7 @@ function initMainApp() {
     'llama-3.3-70b-versatile': 'Llama 3.3 70B',
     'llama-3.1-8b-instant': 'Llama 3.1 8B',
     'qwen/qwen3-32b': 'Qwen 3 32B',
-    'gemma2-9b-it': 'Gemma 2 9B'
+    'meta-llama/llama-4-maverick-17b-128e-instruct': 'Llama 4 17B'
   };
 
   // Initialize
@@ -1694,6 +1694,10 @@ function initMainApp() {
     initialSettings.model = 'qwen/qwen3-32b';
     SupabaseManager.saveSettings(initialSettings);
     console.log('Migrated deprecated model to qwen/qwen3-32b');
+  } else if (initialSettings.model === 'gemma2-9b-it') {
+    initialSettings.model = 'meta-llama/llama-4-maverick-17b-128e-instruct';
+    SupabaseManager.saveSettings(initialSettings);
+    console.log('Migrated deprecated model to Llama 4 Preview');
   }
 
   const validModel = initialSettings.model || 'llama-3.3-70b-versatile';
