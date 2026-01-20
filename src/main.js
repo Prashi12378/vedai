@@ -401,10 +401,81 @@ class SupabaseManager {
         .eq('user_id', userId);
 
       if (error) throw error;
-      console.log("All chats cleared from Supabase");
+      showNotification("All chats cleared.", "success");
     } catch (e) {
-      console.error("Error clearing data:", e);
+      console.error("Error clearing chats:", e);
+      showNotification("Failed to clear chats.", "error");
     }
+  }
+
+  // --- Daily Rate Limit Logic ---
+  static async checkDailyLimit(userId) {
+    if (!userId) return { allowed: true }; // No limit for guests (handled separately) or strictly enforced for signed-in
+
+    const today = new Date().toISOString().split('T')[0];
+
+    try {
+      // Check usage for today
+      const { data, error } = await supabase
+        .from('daily_usage')
+        .select('msg_count')
+        .eq('user_id', userId)
+        .eq('date', today)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') throw error; // Ignore "no rows" error
+
+      if (data && data.msg_count >= 150) {
+        return { allowed: false, count: data.msg_count };
+      }
+
+      return { allowed: true, count: data ? data.msg_count : 0 };
+    } catch (e) {
+      console.error("Error checking daily limit:", e);
+      // Fail open (allow) if DB error, to avoid blocking users due to bugs
+      return { allowed: true, count: 0 };
+    }
+  }
+
+  static async incrementDailyUsage(userId) {
+    if (!userId) return;
+    const today = new Date().toISOString().split('T')[0];
+
+    try {
+      // RPC is better for atomic increments, but usually requires SQL setup.
+      // We'll use upsert with a fetch first approach or specific logic if possible.
+      // Simple upsert: get current, increment, save. Race conditions possible but acceptable for this use case.
+
+      const { data: current } = await supabase
+        .from('daily_usage')
+        .select('msg_count')
+        .eq('user_id', userId)
+        .eq('date', today)
+        .maybeSingle();
+
+      const newCount = (current ? current.msg_count : 0) + 1;
+
+      const { error } = await supabase
+        .from('daily_usage')
+        .upsert({
+          user_id: userId,
+          date: today,
+          msg_count: newCount
+        }, { onConflict: 'user_id, date' });
+
+      if (error) throw error;
+
+    } catch (e) {
+      console.error("Error incrementing usage:", e);
+    }
+  }
+        .eq('user_id', userId);
+
+  if(error) throw error;
+console.log("All chats cleared from Supabase");
+    } catch (e) {
+  console.error("Error clearing data:", e);
+}
   }
 }
 
@@ -1332,8 +1403,8 @@ function initMainApp() {
 
     try {
       const settings = SupabaseManager.getSettings();
-      const modelBtn = document.getElementById('model-btn');
-      const selectedModel = modelBtn ? modelBtn.dataset.value : 'llama-3.3-70b-versatile';
+      // Use model from settings, or fall back to default
+      const selectedModel = settings.model || 'llama-3.3-70b-versatile';
 
       let messagesToSend = [...chatManager.messages];
 
@@ -1359,14 +1430,15 @@ function initMainApp() {
 
 
 
-      // Simplified: No model param
+      // Pass model param
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          history: messagesToSend
+          history: messagesToSend,
+          model: selectedModel
         }),
         signal: abortController.signal
       });
@@ -1380,6 +1452,12 @@ function initMainApp() {
         console.log('Adding message to chatManager');
         window.abortTyping = false; // Reset abort flag
         await chatManager.typeMessage(data.reply, 'ai');
+
+        // Increment Daily Usage after successful generation
+        if (chatManager.currentUser) {
+          await SupabaseManager.incrementDailyUsage(chatManager.currentUser.id);
+        }
+
       } else {
         console.error('Error in response:', data);
         // Prioritize 'details' from our server, then 'error', then 'message'
@@ -1435,6 +1513,13 @@ function initMainApp() {
       }
 
       localStorage.setItem('guest_msg_count', (guestCount + 1).toString());
+    } else {
+      // --- Signed In User Check (150/day) ---
+      const { allowed, count } = await SupabaseManager.checkDailyLimit(chatManager.currentUser.id);
+      if (!allowed) {
+        showNotification(`Daily limit of 150 messages reached (${count}/150). Please try again tomorrow.`, "error");
+        return;
+      }
     }
 
     chatManager.addMessage(text, 'user');
@@ -1496,6 +1581,7 @@ function initMainApp() {
 
   const themeToggle = document.getElementById('theme-toggle');
   const langSelect = document.getElementById('language-select');
+  const modelSelect = document.getElementById('model-select'); // New
   const notifToggle = document.getElementById('notification-toggle');
 
   settingsBtn.addEventListener('click', async () => {
@@ -1503,6 +1589,7 @@ function initMainApp() {
     // Set controls
     themeToggle.checked = settings.theme === 'dark';
     langSelect.value = settings.language || 'en';
+    modelSelect.value = settings.model || 'llama-3.3-70b-versatile'; // New
     notifToggle.checked = settings.notifications !== false; // Default true
 
     settingsModal.classList.remove('hidden');
@@ -1513,8 +1600,9 @@ function initMainApp() {
     const newSettings = {
       theme: themeToggle.checked ? 'dark' : 'light',
       language: langSelect.value,
+      model: modelSelect.value, // New
       notifications: notifToggle.checked,
-      systemInstruction: "You are VedAI, a helpful assistant."
+      systemInstruction: "You are VedAI, a helpful assistant." // Persist existing if needed, or default
     };
 
     SupabaseManager.saveSettings(newSettings);
@@ -1525,6 +1613,7 @@ function initMainApp() {
   // Change Listeners
   themeToggle.addEventListener('change', saveSettings);
   langSelect.addEventListener('change', saveSettings);
+  modelSelect.addEventListener('change', saveSettings); // New
   notifToggle.addEventListener('change', saveSettings);
 
   closeSettingsBtn.addEventListener('click', () => {
