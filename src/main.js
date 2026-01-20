@@ -432,6 +432,10 @@ class SupabaseManager {
       return { allowed: true, count: data ? data.msg_count : 0 };
     } catch (e) {
       console.error("Error checking daily limit:", e);
+      if (e.message) console.error("Error Message:", e.message);
+      if (e.code) console.error("Error Code:", e.code);
+      if (e.hint) console.error("Error Hint:", e.hint);
+
       // Fail open (allow) if DB error, to avoid blocking users due to bugs
       return { allowed: true, count: 0 };
     }
@@ -1678,12 +1682,20 @@ function initMainApp() {
   const modelDisplayNames = {
     'llama-3.3-70b-versatile': 'Llama 3.3 70B',
     'llama-3.1-8b-instant': 'Llama 3.1 8B',
-    'mixtral-8x7b-32768': 'Mixtral 8x7B',
+    'qwen/qwen3-32b': 'Qwen 3 32B',
     'gemma2-9b-it': 'Gemma 2 9B'
   };
 
   // Initialize
   const initialSettings = SupabaseManager.getSettings();
+
+  // --- Migration for Decommissioned Models ---
+  if (initialSettings.model === 'mixtral-8x7b-32768' || initialSettings.model === 'mistral-saba-24b') {
+    initialSettings.model = 'qwen/qwen3-32b';
+    SupabaseManager.saveSettings(initialSettings);
+    console.log('Migrated deprecated model to qwen/qwen3-32b');
+  }
+
   const validModel = initialSettings.model || 'llama-3.3-70b-versatile';
   if (currentModelNameSpan) {
     currentModelNameSpan.textContent = modelDisplayNames[validModel] || 'Llama 3.3 70B';

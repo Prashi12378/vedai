@@ -187,6 +187,14 @@ Do NOT provide a made-up answer if you need to search. Just output the command.`
             console.error('❌ Groq Error Data:', JSON.stringify(error.response.data));
         }
 
+        // Check for 401 Authentication Error specifically
+        if (error.status === 401 || (error.response && error.response.status === 401)) {
+            return res.status(500).json({
+                error: 'Authentication Error',
+                details: 'Invalid GROQ_API_KEY. Please check your .env file or Vercel Environment Variables. The key "YOUR_GROQ_API_KEY" is a placeholder and must be replaced with a real key from console.groq.com.'
+            });
+        }
+
         res.status(500).json({
             error: 'Internal Server Error',
             details: error.response?.data?.error?.message || error.message || JSON.stringify(error)
