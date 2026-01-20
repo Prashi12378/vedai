@@ -34,7 +34,7 @@ function decryptData(ciphertext) {
     if (!ciphertext) return [];
 
     // Check for corrupted string "[object Object]"
-    if (ciphertext === "[object Object]") {
+    if (typeof ciphertext === 'string' && ciphertext.includes("[object Object]")) {
       console.warn("Found corrupted chat data '[object Object]'. Returning empty history.");
       return [];
     }
