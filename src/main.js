@@ -469,14 +469,7 @@ class SupabaseManager {
       console.error("Error incrementing usage:", e);
     }
   }
-        .eq('user_id', userId);
 
-  if(error) throw error;
-console.log("All chats cleared from Supabase");
-    } catch (e) {
-  console.error("Error clearing data:", e);
-}
-  }
 }
 
 // --- Chat Manager ---
@@ -1675,6 +1668,65 @@ function initMainApp() {
   }
 
   // Attachment Button (Placeholder)
+
+  // --- Quick Model Selector Logic ---
+  const quickModelBtn = document.getElementById('quick-model-btn');
+  const quickModelMenu = document.getElementById('quick-model-menu');
+  const currentModelNameSpan = document.getElementById('current-model-name');
+
+  // Map values to display names
+  const modelDisplayNames = {
+    'llama-3.3-70b-versatile': 'Llama 3.3 70B',
+    'llama-3.1-8b-instant': 'Llama 3.1 8B',
+    'mixtral-8x7b-32768': 'Mixtral 8x7B',
+    'gemma2-9b-it': 'Gemma 2 9B'
+  };
+
+  // Initialize
+  const initialSettings = SupabaseManager.getSettings();
+  const validModel = initialSettings.model || 'llama-3.3-70b-versatile';
+  if (currentModelNameSpan) {
+    currentModelNameSpan.textContent = modelDisplayNames[validModel] || 'Llama 3.3 70B';
+  }
+
+  if (quickModelBtn && quickModelMenu) {
+    // Toggle
+    quickModelBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      quickModelMenu.classList.toggle('hidden');
+    });
+
+    // Selection
+    quickModelMenu.querySelectorAll('.menu-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const val = item.dataset.value;
+        const name = item.querySelector('.model-name').textContent;
+
+        // Save
+        const current = SupabaseManager.getSettings();
+        current.model = val;
+        SupabaseManager.saveSettings(current);
+
+        // Update UI
+        currentModelNameSpan.textContent = modelDisplayNames[val] || name;
+
+        // Sync with Settings Modal if open/exists
+        const settingsSelect = document.getElementById('model-select');
+        if (settingsSelect) settingsSelect.value = val;
+
+        // Close
+        quickModelMenu.classList.add('hidden');
+      });
+    });
+
+    // Outside Click Close
+    document.addEventListener('click', (e) => {
+      if (!quickModelBtn.contains(e.target) && !quickModelMenu.contains(e.target)) {
+        quickModelMenu.classList.add('hidden');
+      }
+    });
+  }
 
   // --- Attachment Logic ---
   const attachBtn = document.getElementById('attach-btn');

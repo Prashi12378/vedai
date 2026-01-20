@@ -120,7 +120,45 @@
           <input type="file" id="file-input-image" style="display: none;" accept="image/*" />
           <input type="file" id="file-input-file" style="display: none;" accept=".pdf, .txt, .doc, .docx" />
         </form>
-        <p class="footer-text">VedAI is helpful, and verifying its output makes it even better</p>
+
+        <div class="input-footer"
+          style="display: flex; justify-content: space-between; align-items: center; width: 95%; max-width: 1000px; margin-top: 5px;">
+
+          <!-- Model Selector -->
+          <div class="model-selector-wrapper" style="position: relative;">
+            <button id="quick-model-btn" class="model-pill-btn" title="Change Model">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 16a6 6 0 1 1 6-6 6 6 0 0 1-6 6z"></path>
+              </svg>
+              <span id="current-model-name">Llama 3.3 70B</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 9l6 6 6-6"></path>
+              </svg>
+            </button>
+
+            <div id="quick-model-menu" class="model-menu hidden">
+              <button class="menu-item" data-value="llama-3.3-70b-versatile">
+                <span class="model-name">Llama 3.3 70B</span>
+                <span class="model-desc">Default • Intelligent</span>
+              </button>
+              <button class="menu-item" data-value="llama-3.1-8b-instant">
+                <span class="model-name">Llama 3.1 8B</span>
+                <span class="model-desc">Fast • Efficient</span>
+              </button>
+              <button class="menu-item" data-value="mixtral-8x7b-32768">
+                <span class="model-name">Mixtral 8x7B</span>
+                <span class="model-desc">Balanced • Open</span>
+              </button>
+              <button class="menu-item" data-value="gemma2-9b-it">
+                <span class="model-name">Gemma 2 9B</span>
+                <span class="model-desc">Google • Concise</span>
+              </button>
+            </div>
+          </div>
+
+          <p class="footer-text" style="flex: 1; text-align: right; margin: 0;">VedAI is helpful, and verifying its
+            output makes it even better</p>
+        </div>
       </div>
     </main>
   </div>
