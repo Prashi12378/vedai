@@ -139,6 +139,10 @@ Do NOT provide a made-up answer if you need to search. Just output the command.`
         });
 
         let reply = completion.choices[0].message.content || "";
+
+        if (!reply.trim()) {
+            reply = "I apologize, but I couldn't generate a text response. Please try asking differently.";
+        }
         console.log('📝 Initial Reply:', reply);
 
         // 2. Check for Search Command
@@ -171,12 +175,18 @@ Do NOT provide a made-up answer if you need to search. Just output the command.`
                     stream: false,
                 });
 
-                reply = completion.choices[0].message.content;
+                reply = completion.choices[0].message.content || "";
+
+                if (!reply || !reply.trim()) {
+                    reply = "I found some information but couldn't summarize it. Please verify the search results above (if any) or try again.";
+                }
             } else {
                 reply = "I tried to search for that but couldn't retrieve the information currently.";
             }
         }
 
+        if (reply === undefined) reply = ""; // Safety net
+        console.log('📤 Sending response:', JSON.stringify({ reply }));
         res.json({ reply });
 
     } catch (error) {

@@ -92,6 +92,39 @@
           <!-- Middle: Input -->
           <textarea id="message-input" placeholder="Message VedAI..." rows="1" aria-label="Chat message"></textarea>
 
+          <!-- Model Selector (Moved Inside) -->
+          <div class="model-selector-wrapper" style="position: relative;">
+            <button type="button" id="quick-model-btn" class="model-pill-btn" title="Change Model">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 16a6 6 0 1 1 6-6 6 6 0 0 1-6 6z"></path>
+              </svg>
+              <span id="current-model-name">Llama 3.3 70B</span>
+              <svg id="model-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <path d="M6 9l6 6 6-6"></path>
+              </svg>
+            </button>
+
+            <div id="quick-model-menu" class="model-menu hidden">
+              <button class="menu-item" data-value="llama-3.3-70b-versatile">
+                <span class="model-name">Llama 3.3 70B</span>
+                <span class="model-desc">Default • Intelligent</span>
+              </button>
+              <button class="menu-item" data-value="llama-3.1-8b-instant">
+                <span class="model-name">Llama 3.1 8B</span>
+                <span class="model-desc">Fast • Efficient</span>
+              </button>
+              <button class="menu-item" data-value="qwen/qwen3-32b">
+                <span class="model-name">Qwen 3 32B</span>
+                <span class="model-desc">Qwen • Balanced</span>
+              </button>
+              <button class="menu-item" data-value="meta-llama/llama-4-maverick-17b-128e-instruct">
+                <span class="model-name">Llama 4 17B</span>
+                <span class="model-desc">Meta • Preview</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Right: Actions Group -->
           <div class="input-actions-right" style="display: flex; align-items: center; gap: 8px; margin-left: 8px;">
 
@@ -121,46 +154,11 @@
           <input type="file" id="file-input-file" style="display: none;" accept=".pdf, .txt, .doc, .docx" />
         </form>
 
-        <div class="input-footer"
-          style="display: flex; justify-content: space-between; align-items: center; width: 95%; max-width: 1000px; margin-top: 5px;">
-
-          <!-- Model Selector -->
-          <div class="model-selector-wrapper" style="position: relative;">
-            <button id="quick-model-btn" class="model-pill-btn" title="Change Model">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 16a6 6 0 1 1 6-6 6 6 0 0 1-6 6z"></path>
-              </svg>
-              <span id="current-model-name">Llama 3.3 70B</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M6 9l6 6 6-6"></path>
-              </svg>
-            </button>
-
-            <div id="quick-model-menu" class="model-menu hidden">
-              <button class="menu-item" data-value="llama-3.3-70b-versatile">
-                <span class="model-name">Llama 3.3 70B</span>
-                <span class="model-desc">Default • Intelligent</span>
-              </button>
-              <button class="menu-item" data-value="llama-3.1-8b-instant">
-                <span class="model-name">Llama 3.1 8B</span>
-                <span class="model-desc">Fast • Efficient</span>
-              </button>
-              <button class="menu-item" data-value="qwen/qwen3-32b">
-                <span class="model-name">Qwen 3 32B</span>
-                <span class="model-desc">Qwen • Balanced</span>
-              </button>
-              <button class="menu-item" data-value="meta-llama/llama-4-maverick-17b-128e-instruct">
-                <span class="model-name">Llama 4 17B</span>
-                <span class="model-desc">Meta • Preview</span>
-              </button>
-            </div>
-          </div>
-
-          <p class="footer-text" style="flex: 1; text-align: right; margin: 0;">VedAI is helpful, and verifying its
-            output makes it even better</p>
-        </div>
+        <p class="footer-text" style="flex: 1; text-align: center; margin: 0;">VedAI is helpful, and verifying its
+          output makes it even better</p>
       </div>
-    </main>
+  </div>
+  </main>
   </div>
 
   <!-- Camera Modal -->

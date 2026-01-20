@@ -145,7 +145,6 @@ function createActionsToolbar(text) {
   </svg>
   Copy
 `;
-  // Sanitize text for attribute (basic) or just use closure
   copyBtn.onclick = () => window.copyMessage(text, copyBtn);
   toolbar.appendChild(copyBtn);
 
@@ -164,6 +163,81 @@ function createActionsToolbar(text) {
 `;
   shareBtn.onclick = () => window.shareMessage(text, shareBtn);
   toolbar.appendChild(shareBtn);
+
+  // --- Three Dots (More) Button ---
+  const moreBtn = document.createElement('button');
+  moreBtn.className = 'action-btn-sm';
+  moreBtn.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="1"></circle>
+      <circle cx="19" cy="12" r="1"></circle>
+      <circle cx="5" cy="12" r="1"></circle>
+    </svg>
+  `;
+
+  // Dropdown Menu
+  const menu = document.createElement('div');
+  menu.className = 'more-menu-dropdown hidden';
+  menu.innerHTML = `
+    <button class="more-menu-item" id="opt-regenerate">
+       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+       Try again
+    </button>
+    <button class="more-menu-item" disabled>
+       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+       Add details
+    </button>
+  `;
+
+  // Toggle Logic
+  moreBtn.onclick = (e) => {
+    e.stopPropagation();
+    // Close other open menus if any
+    document.querySelectorAll('.more-menu-dropdown:not(.hidden)').forEach(m => {
+      if (m !== menu) m.classList.add('hidden');
+    });
+    menu.classList.toggle('hidden');
+  };
+
+  // Menu Item Logic
+  menu.querySelector('#opt-regenerate').onclick = (e) => {
+    e.stopPropagation();
+    menu.classList.add('hidden');
+    // Trigger Regeneration (Assuming logic handles resending last user message)
+    window.dispatchEvent(new Event('trigger-generation'));
+  };
+
+  // Add Details Logic
+  const addDetailsBtn = menu.querySelector('.more-menu-item:nth-child(2)');
+  addDetailsBtn.disabled = false;
+  addDetailsBtn.onclick = (e) => {
+    e.stopPropagation();
+    menu.classList.add('hidden');
+
+    const input = document.getElementById('message-input');
+    if (input) {
+      input.value = "Please add more details about that.";
+      input.focus();
+      const form = document.getElementById('chat-form');
+      if (form) form.requestSubmit();
+    }
+  };
+
+  // Close when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!menu.contains(e.target) && !moreBtn.contains(e.target)) {
+      menu.classList.add('hidden');
+    }
+  });
+
+  // Wrapper for relative positioning
+  const moreWrapper = document.createElement('div');
+  moreWrapper.style.position = 'relative';
+  moreWrapper.style.display = 'inline-block';
+  moreWrapper.appendChild(moreBtn);
+  moreWrapper.appendChild(menu);
+
+  toolbar.appendChild(moreWrapper);
 
   return toolbar;
 }
@@ -1336,6 +1410,14 @@ function initMainApp() {
 
   // --- Event Listen for Edit Regeneration ---
   window.addEventListener('trigger-generation', async () => {
+    // If the last message is from AI (e.g. error or previous response), remove it first
+    if (chatManager.messages.length > 0) {
+      const lastMsg = chatManager.messages[chatManager.messages.length - 1];
+      if (lastMsg.role === 'ai') {
+        chatManager.messages.pop();
+        chatManager.renderAllMessages(); // Sync UI
+      }
+    }
     await generateResponse();
   });
 
@@ -1445,7 +1527,7 @@ function initMainApp() {
       console.log('Testing data', data);
       loading.remove();
 
-      if (res.ok && data.reply) {
+      if (res.ok && typeof data.reply === 'string') {
         console.log('Adding message to chatManager');
         window.abortTyping = false; // Reset abort flag
         await chatManager.typeMessage(data.reply, 'ai');
@@ -1456,7 +1538,7 @@ function initMainApp() {
         }
 
       } else {
-        console.error('Error in response:', data);
+        console.error('Error in response:', JSON.stringify(data, null, 2));
         // Prioritize 'details' from our server, then 'error', then 'message'
         const errorMsg = data.details || data.error || data.message || "Unknown Error";
         const statusMsg = `Status: ${res.status}`;

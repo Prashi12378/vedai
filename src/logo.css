@@ -1,0 +1,13 @@
+.app-logo {
+    height: 32px;
+    width: auto;
+    margin-right: 12px;
+    object-fit: contain;
+}
+
+@media (max-width: 480px) {
+    .app-logo {
+        height: 28px;
+        margin-right: 8px;
+    }
+}
